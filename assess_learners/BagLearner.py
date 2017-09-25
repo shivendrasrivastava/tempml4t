@@ -13,26 +13,27 @@ class BagLearner(object):
 
     def addEvidence(self, Xtrain, Ytrain):
         rows = Xtrain.shape[0]
-        for i in range(self.bags):
-            #take a sample chunk of data from the training data
-            row_range = np.arange(rows)
-            #use np.random.choice to grab sample
-            sample_chunk = np.random.choice(row_range, rows) 
+        #take a sample chunk of data from the training data
+        row_range = np.arange(rows)
+        sample_chunk = None 
+        # keeping sample out here works..?
+        # sample_chunk = np.random.choice(row_range, rows)
+        for learner in self.learners:
             #store sliced samples
+            sample_chunk = np.random.choice(row_range, rows)
             x_sample, y_sample = Xtrain[sample_chunk], Ytrain[sample_chunk]
             #pass to learners
-        for i in range(self.bags):
-            self.learners[i].addEvidence(x_sample, y_sample)
+            learner.addEvidence(x_sample, y_sample)
 
     def query(self, Xtest):
         #define array to be returned
         return_arr = [] 
 
-        for learner in self.learners: #loop through all the learners
+        for learner in self.learners:
           #for each bag, query a learner and store the result on the array
           return_arr.append(0)
           return_arr[len(return_arr) - 1 ] = learner.query(Xtest)
         
-            
-        result = np.array(return_arr) #store the result and return
-        return np.mean(result, axis=0)
+        #convert result to np array, take mean and return
+        result = np.mean(np.array(return_arr), axis=0) 
+        return result

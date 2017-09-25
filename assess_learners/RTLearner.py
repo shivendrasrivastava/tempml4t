@@ -1,5 +1,5 @@
 import numpy as np
-# PYTHONPATH=..:. python grade_learners.py
+
 class RTLearner(object):
 
     def __init__(self, leaf_size=1, verbose = False):
@@ -14,35 +14,45 @@ class RTLearner(object):
         self.tree = self.build_tree(dataX, dataY)
         
     def query(self, Xtest):
-        result_arr = []
-        #define inner recursive function
-        def query_helper(point, curr_ind):
-          node = self.tree[int(curr_ind)]
-          if node[0] is None:
-            return node[1]
-          feature_index = int(node[0])
-          if point[feature_index] <= node[1]:
-            return query_helper(point, curr_ind + node[2])
+        def query_helper(row, curr_ind):
+          
+          #if its a leaf, it'll have -1 for first arg
+          if self.tree[int(curr_ind)][0] == -1:
+            return self.tree[int(curr_ind)][1]
+          
+          #recursively travel and check if current node is less than current feature
+          if self.tree[int(curr_ind)][1] >= row[int(self.tree[int(curr_ind)][0])]:
+            #call recursive function on position of next node
+            left_position = curr_ind + self.tree[int(curr_ind)][2]
+            return query_helper(row, left_position)
           else:
-            return query_helper(point, curr_ind + node[3])
+            right_position = curr_ind + self.tree[int(curr_ind)][3]
+            return query_helper(row, right_position)
 
+        result_arr = []
+        counter = 0
         for x in Xtest:
-            result_arr.append(query_helper(x, 0))
+            leaf = query_helper(x, 0)
+            result_arr.insert(counter, leaf)
+            counter += 1
         return np.array(result_arr)
 
     def build_tree(self, dataX, dataY):
         # setup
         cols = dataX.shape[1] #dataX columns
         rows = dataX.shape[0] #dataX rows
-        default_leaf = np.array([[None, np.mean(dataY), None, None]]) #explain this, figure out double arrays
+        Ymean = np.mean(dataY)
+        leaf = [-1, Ymean, None, None]
+        return_leaf = np.array([leaf]) 
         
         # if all the y data is the same, it doesn't matter
-        if np.all(dataY[0] == dataY):
-          return default_leaf#return the default leaf
+        ysim = dataY[0] == dataY
+        if np.all(ysim):
+          return return_leaf#return leaf
 
         # if the dataX rows is less than the leaf size, we're being given too few samples of data
         if self.leaf_size >= rows:
-          return default_leaf#return the default leaf
+          return return_leaf#return the default leaf
         
         #calculate the optimal feature to split on
         # maximum, feature = None, None
@@ -54,26 +64,32 @@ class RTLearner(object):
         #     elif abs(correlation) > abs(maximum): #if correlation exceeds previous maximum
         #       maximum, feature = correlation, factor
         
-        #for random feature
-        feature = np.random.randint(0, dataX.shape[1])
-              
-        
+        # here, we randomly select the feature from the factor columns
+        feature = np.random.randint(0, cols)
         feature_col = dataX[:, feature]
-        split_val = np.median(feature_col) #calculate split value by using median of feature column
+        split = np.median(feature_col) #calculate split value by using median of feature column
         
-        left_data, right_data = feature_col <= split_val, feature_col > split_val #split data into two parts
-        
-        if np.all(left_data): ## explain this line
-            return default_leaf
+        left_data, right_data = feature_col <= split, feature_col > split #split data into two parts
+
+        #store left and right xy samples
+        left_X, left_Y = dataX[left_data], dataY[left_data]
+        right_X, right_Y = dataX[right_data], dataY[right_data]
+
+        if np.all(left_data): 
+            return return_leaf
         elif np.all(right_data):
-            return default_leaf
+            return return_leaf
 
         #recursively build trees
-        left_tree, right_tree = self.build_tree(dataX[left_data], dataY[left_data]), self.build_tree(dataX[right_data], dataY[right_data]) 
+        left_tree, right_tree = self.build_tree(left_X, left_Y), self.build_tree(right_X, right_Y) 
 
-        root = np.array([[feature, split_val, 1, left_tree.shape[0] + 1]]) #explain this, also figure out double arrays
+        # current root will always be starting on the next line
+        current_root = [feature, split, 1, left_tree.shape[0] + 1]
+        root = np.array([current_root]) 
 
+        #append left subtree to current tree
         left_append = np.append(root, left_tree, axis = 0)
+        #append append right append to tree after left append
         tree = np.append(left_append, right_tree, axis = 0)
         #print tree
         return tree
