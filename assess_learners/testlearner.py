@@ -6,6 +6,11 @@ import numpy as np
 import math
 import LinRegLearner as lrl
 import DTLearner as dt
+import RTLearner as rt 
+import BagLearner as bl 
+import InsaneLearner as il 
+import matplotlib.pyplot as plt
+import time
 import sys
 
 if __name__=="__main__":
@@ -29,25 +34,43 @@ if __name__=="__main__":
     print testX.shape
     print testY.shape
 
-    # create a learner and train it
-    learner = dt.DTLearner(verbose = True) # create a LinRegLearner
-    learner.addEvidence(trainX, trainY) # train it
-    print learner.author()
+    rmse_arr = []
 
-    # evaluate in sample
-    predY = learner.query(trainX) # get the predictions
-    rmse = math.sqrt(((trainY - predY) ** 2).sum()/trainY.shape[0])
-    print
-    print "In sample results"
-    print "RMSE: ", rmse
-    c = np.corrcoef(predY, y=trainY)
-    print "corr: ", c[0,1]
+    start_time = time.time()
+    for i in range(1,30):
+        # create a learner and train it
+        learner = bl.BagLearner(learner = rt.RTLearner, kwargs = {"leaf_size": i}, bags = 30, boost = False, verbose = False) # create a LinRegLearner
+        learner.addEvidence(trainX, trainY) # train it
+        print learner.author()
 
-    # evaluate out of sample
-    predY = learner.query(testX) # get the predictions
-    rmse = math.sqrt(((testY - predY) ** 2).sum()/testY.shape[0])
-    print
-    print "Out of sample results"
-    print "RMSE: ", rmse
-    c = np.corrcoef(predY, y=testY)
-    print "corr: ", c[0,1]
+        # evaluate in sample
+        # predY = learner.query(trainX) # get the predictions
+        # rmse = math.sqrt(((trainY - predY) ** 2).sum()/trainY.shape[0])
+        # print
+        # print "In sample results"
+        # print "RMSE: ", rmse
+        # rmse_arr.append(rmse)
+        # c = np.corrcoef(predY, y=trainY)
+        # print "corr: ", c[0,1]
+
+        # evaluate out of sample
+        predY = learner.query(testX) # get the predictions
+        rmse = math.sqrt(((testY - predY) ** 2).sum()/testY.shape[0])
+        print
+        print "Out of sample results"
+        print "RMSE: ", rmse
+        rmse_arr.append(rmse)
+        c = np.corrcoef(predY, y=testY)
+        print "corr: ", c[0,1]
+
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+    # plt.ylabel('RMSE')
+    # plt.xlabel('Leaf Size')
+    # plt.title('The Impact of Leaf Size on RMSE - 30 bags of Random Trees')
+    # plt.plot(rmse_arr)
+    
+    # for i in range(1,29):
+    #     print i, ',', rmse_arr[i]
+    # plt.show()
+

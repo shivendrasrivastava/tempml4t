@@ -21,8 +21,11 @@ class DTLearner(object):
             return self.tree[int(curr_ind)][1]
           
           #recursively travel and check if current node is less than current feature
-          if self.tree[int(curr_ind)][1] >= row[int(self.tree[int(curr_ind)][0])]:
+          if self.tree[int(curr_ind)][1] > row[int(self.tree[int(curr_ind)][0])]:
             #call recursive function on position of next node
+            left_position = curr_ind + self.tree[int(curr_ind)][2]
+            return query_helper(row, left_position)
+          elif self.tree[int(curr_ind)][1] == row[int(self.tree[int(curr_ind)][0])]:
             left_position = curr_ind + self.tree[int(curr_ind)][2]
             return query_helper(row, left_position)
           else:
@@ -43,10 +46,11 @@ class DTLearner(object):
         rows = dataX.shape[0] #dataX rows
         Ymean = np.mean(dataY)
         leaf = [-1, Ymean, None, None]
+        ysim = dataY[0] == dataY
         return_leaf = np.array([leaf]) 
         
         # if all the y data is the same, it doesn't matter
-        ysim = dataY[0] == dataY
+        
         if np.all(ysim):
           return return_leaf#return leaf
 
@@ -84,10 +88,10 @@ class DTLearner(object):
 
         # current root will always be starting on the next line
         current_root = [feature, split, 1, left_tree.shape[0] + 1]
-        root = np.array([current_root]) 
+        tree_root = np.array([current_root]) 
 
         #append left subtree to current tree
-        left_append = np.append(root, left_tree, axis = 0)
+        left_append = np.append(tree_root, left_tree, axis = 0)
         #append append right append to tree after left append
         tree = np.append(left_append, right_tree, axis = 0)
         #print tree

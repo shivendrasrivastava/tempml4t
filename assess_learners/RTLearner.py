@@ -21,8 +21,11 @@ class RTLearner(object):
             return self.tree[int(curr_ind)][1]
           
           #recursively travel and check if current node is less than current feature
-          if self.tree[int(curr_ind)][1] >= row[int(self.tree[int(curr_ind)][0])]:
+          if self.tree[int(curr_ind)][1] > row[int(self.tree[int(curr_ind)][0])]:
             #call recursive function on position of next node
+            left_position = curr_ind + self.tree[int(curr_ind)][2]
+            return query_helper(row, left_position)
+          elif self.tree[int(curr_ind)][1] == row[int(self.tree[int(curr_ind)][0])]:
             left_position = curr_ind + self.tree[int(curr_ind)][2]
             return query_helper(row, left_position)
           else:
@@ -43,10 +46,11 @@ class RTLearner(object):
         rows = dataX.shape[0] #dataX rows
         Ymean = np.mean(dataY)
         leaf = [-1, Ymean, None, None]
+        ysim = dataY[0] == dataY
         return_leaf = np.array([leaf]) 
         
         # if all the y data is the same, it doesn't matter
-        ysim = dataY[0] == dataY
+        
         if np.all(ysim):
           return return_leaf#return leaf
 
@@ -63,9 +67,8 @@ class RTLearner(object):
         #       maximum, feature = correlation, factor
         #     elif abs(correlation) > abs(maximum): #if correlation exceeds previous maximum
         #       maximum, feature = correlation, factor
-        
-        # here, we randomly select the feature from the factor columns
-        feature = np.random.randint(0, cols)
+              
+        feature = np.random.randint(cols)
         feature_col = dataX[:, feature]
         split = np.median(feature_col) #calculate split value by using median of feature column
         
@@ -75,8 +78,10 @@ class RTLearner(object):
         left_X, left_Y = dataX[left_data], dataY[left_data]
         right_X, right_Y = dataX[right_data], dataY[right_data]
 
+        #if they're all lower, return default leaf, no further recursion
         if np.all(left_data): 
             return return_leaf
+        #if they're all higher, return default leaf, no further recursion
         elif np.all(right_data):
             return return_leaf
 
