@@ -12,14 +12,14 @@ def best4LinReg(seed=1489683273):
     return X, Y
 
 def best4DT(seed=1489683273):
-    # works 99% of the time
-    # X = np.random.standard_normal(size=(100, 100))
-    # Y = np.random.random(size=(100))
     np.random.seed(seed)
-    X = np.random.random(size = (30,80))
-    np.random.seed(seed) 
-    #return a random x, and a y that is just one column of the x
-    return X, np.random.random(size = (30,80))[:,63]
+    return np.random.normal(size=(100, 50)), np.random.standard_normal(size=(100))
+
+    # works 99% of the time
+    # X = np.random.random(size = (30,80))
+    # np.random.seed(seed) 
+    # # return a random x, and a y that is just one column of the x
+    # return X, np.random.random(size = (30,80))[:,63]
 
 def author():
     return 'hsikka3' #Change this to your user ID
