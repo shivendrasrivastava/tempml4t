@@ -8,16 +8,17 @@ from util import get_data, plot_data
 
 
 def author():
-    return 'hsikka3'  # replace tb34 with your Georgia Tech username.
+    return 'hsikka3'  
 
 def compute_portvals(orders_file = "./orders/orders-01.csv", start_val = 1000000, commission=9.95, impact=0.005):
     ## Data Frame of Orders
     orders = pd.read_csv(orders_file, index_col='Date', parse_dates=True, na_values=['nan'])
-    # grab symbols from orders for later use
+    orders = orders.sort_index()
+    
+    #grab symbols from orders for later use
     syms = orders.drop_duplicates('Symbol','first',False).values[:,0]
     # start and end dates
-    start_date = orders.index[0]
-    end_date = orders.index[-1]
+    start_date, end_date = orders.index[0], orders.index[-1]
 
     dates = pd.date_range(start_date, end_date)
 
@@ -42,7 +43,7 @@ def compute_portvals(orders_file = "./orders/orders-01.csv", start_val = 1000000
      # set first cash to start val? i don't know if this is necessary
 
     for index, row in orders.iterrows():
-        
+
         impact_buy = 1.0 + impact
         impact_sell = 1.0 - impact
 
@@ -64,7 +65,7 @@ def compute_portvals(orders_file = "./orders/orders-01.csv", start_val = 1000000
 
     ##Data Frame of Values
     values = prices * holdings
-
+    
     return values.sum(axis=1)
 
 def test_code():
@@ -107,7 +108,9 @@ def test_code():
     print "Final Portfolio Value: {}".format(portvals[-1])
 
 if __name__ == "__main__":
-    compute_portvals("./orders/orders-02.csv")
+    
+    compute_portvals("./orders/sample-orders.csv", 100000, 0, 0)
+    # compute_portvals("./orders/orders-01.csv")
     # compute_portvals("./orders/orders-02.csv")
     # compute_portvals("./orders/orders-03.csv")
     # compute_portvals("./orders/orders-04.csv")
