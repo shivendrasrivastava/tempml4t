@@ -1,5 +1,5 @@
 <pre>--- Summary ---
-Tests passed: 13 out of 13
+Tests passed: 15 out of 15
 
 --- Details ---
 Test #0: passed 
@@ -15,4 +15,6 @@ Test #9: passed
 Test #10: passed 
 Test #11: passed 
 Test #12: passed 
+Test #13: passed 
+Test #14: passed 
 </pre>

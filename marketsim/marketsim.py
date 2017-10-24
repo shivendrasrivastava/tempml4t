@@ -10,6 +10,10 @@ from util import get_data, plot_data
 def author():
     return 'hsikka3'  
 
+## issues
+    # what if price data is not there
+    # 
+
 def compute_portvals(orders_file = "./orders/orders-01.csv", start_val = 1000000, commission=9.95, impact=0.005):
     ## Data Frame of Orders
     orders = pd.read_csv(orders_file, index_col='Date', parse_dates=True, na_values=['nan'])
@@ -24,12 +28,22 @@ def compute_portvals(orders_file = "./orders/orders-01.csv", start_val = 1000000
 
     ## Data Frame of Prices
     prices = get_data(syms.tolist(), dates, True, 'Adj Close').assign(Cash = 1.0)
+    prices = prices.fillna(method='ffill').fillna(method='bfill')
+
+    # for index in orders.index:
+    #     if (index in prices.index):
+    #         start_date = index
+    #         break
+
+    # dates = pd.date_range(start_date, end_date)
+    # prices = get_data(syms.tolist(), dates, True, 'Adj Close').assign(Cash = 1.0)
+    # prices = prices.fillna(method='ffill').fillna(method='bfill')
 
     ## Data Frame of Trades
 
     trades = prices.copy()
     for column in trades:
-        trades[column] = 0
+        trades[column] = 0.0
 
     # loop through orders
     # for each order
@@ -44,28 +58,32 @@ def compute_portvals(orders_file = "./orders/orders-01.csv", start_val = 1000000
 
     for index, row in orders.iterrows():
 
-        impact_buy = 1.0 + impact
-        impact_sell = 1.0 - impact
+        # check if order date is on a trading day
 
-        if (row['Order'] == 'BUY'):
-            trades.loc[index,row['Symbol']] += row['Shares']
-            trades.loc[index,'Cash'] += row['Shares'] * ((prices.loc[index,row['Symbol']] * -1) * impact_buy)
+        if(index in prices.index): 
+            impact_buy = 1.0 + impact
+            impact_sell = 1.0 - impact
 
-        if (row['Order'] == 'SELL'):
-            trades.loc[index,row['Symbol']] += row['Shares'] * -1
-            trades.loc[index,'Cash'] += row['Shares'] * ((prices.loc[index,row['Symbol']]) * impact_sell)
-        
-        ## account for commission
-        trades.loc[index,'Cash'] -= commission
+            if (row['Order'] == 'BUY'):
+                trades.loc[index,row['Symbol']] += row['Shares']
+                trades.loc[index,'Cash'] += row['Shares'] * ((prices.loc[index,row['Symbol']] * -1) * impact_buy)
+
+            if (row['Order'] == 'SELL'):
+                trades.loc[index,row['Symbol']] += row['Shares'] * -1
+                trades.loc[index,'Cash'] += row['Shares'] * ((prices.loc[index,row['Symbol']]) * impact_sell)
+            
+            ## account for commission
+            trades.loc[index,'Cash'] -= commission
 
     ## Data Frame of Holdings
     temp_holdings = trades.copy()
-    temp_holdings.loc[start_date,'Cash'] = start_val + temp_holdings.loc[start_date,'Cash']
+    temp_holdings.loc[prices.index[0],'Cash'] = start_val + temp_holdings.loc[prices.index[0],'Cash']
     holdings = temp_holdings.cumsum(axis=0)
 
     ##Data Frame of Values
     values = prices * holdings
     
+    # print values.sum(axis=1)
     return values.sum(axis=1)
 
 def test_code():
@@ -109,7 +127,7 @@ def test_code():
 
 if __name__ == "__main__":
     
-    compute_portvals("./orders/sample-orders.csv", 100000, 0, 0)
+    compute_portvals("./orders/orders2.csv", 1000000)
     # compute_portvals("./orders/orders-01.csv")
     # compute_portvals("./orders/orders-02.csv")
     # compute_portvals("./orders/orders-03.csv")
