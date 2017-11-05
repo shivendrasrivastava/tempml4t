@@ -66,6 +66,7 @@ def benchmark(symbol = 'JPM', sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,12,3
 
 if __name__ == "__main__":
 
+    
     benchmark_val = compute_portvals(benchmark(),100000, 0.0, 0.0)
     first_benchmark = benchmark_val.iloc[0]
 
@@ -81,4 +82,4 @@ if __name__ == "__main__":
     plt.ylabel('Normalized Portfolio Value')
     plt.title('Benchmark vs BPS - In Sample')
     plt.legend()
-    plt.show()
+    plt.savefig('figures/best_possible_in_sample.pdf')

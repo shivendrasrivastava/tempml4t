@@ -84,11 +84,11 @@ if __name__ == "__main__":
 
     ## the in sample plots
     benchmark_val = compute_portvals(benchmark(),100000)
-    print benchmark_val
+    # print benchmark_val
     first_benchmark = benchmark_val.iloc[0]
 
     manual_strategy = compute_portvals(testPolicy(),100000)
-    print manual_strategy
+    # print manual_strategy
     first_manual_strategy = manual_strategy.iloc[0]
 
     plt.plot(benchmark_val/first_benchmark, label='Benchmark', color='b')
@@ -99,16 +99,17 @@ if __name__ == "__main__":
     plt.ylabel('Normalized Portfolio Value')
     plt.title('Portfolio Comparison - In Sample')
     plt.legend()
-    plt.show()
+    plt.savefig('figures/manual_strategy_in_sample.pdf')
+    plt.clf()
 
 
     ## the out of sample plots, simply exit out of the in sample and out will be presented
     out_benchmark = compute_portvals(benchmark('JPM', dt.datetime(2010,1,1), dt.datetime(2011,12,31)),100000)
-    print out_benchmark
+    # print out_benchmark
     out_first_benchmark = out_benchmark.iloc[0]
 
     out_manual_strategy = compute_portvals(testPolicy('JPM', dt.datetime(2010,1,1), dt.datetime(2011,12,31)),100000)
-    print out_manual_strategy
+    # print out_manual_strategy
     out_first_manual_strategy = out_manual_strategy.iloc[0]
 
     plt.plot(out_benchmark/out_first_benchmark, label='Benchmark', color='b')
@@ -119,6 +120,7 @@ if __name__ == "__main__":
     plt.ylabel('Normalized Portfolio Value')
     plt.title('Portfolio Comparison - Out of Sample')
     plt.legend()
-    plt.show()
+    plt.savefig('figures/manual_strategy_out_sample.pdf')
+    
 
     

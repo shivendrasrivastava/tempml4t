@@ -21,9 +21,16 @@ def calculate_SMA(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
   price = price.fillna(method='ffill').fillna(method='bfill')
   # JPMdf = JPMdf/JPMdf.iloc[0]
   rollingDF = pd.rolling_mean(price,window=20)
+  return rollingDF
 
-  
-  
+def calculate_EMA(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
+  dates = pd.date_range(sd,ed)
+  df = get_data(symbols,dates,True,'Adj Close')
+
+  price = df.iloc[0:,1:]
+  price = price.fillna(method='ffill').fillna(method='bfill')
+  # JPMdf = JPMdf/JPMdf.ioc[0]
+  rollingDF = pd.rolling_mean(price,window=20)
   return rollingDF
 
 def calculate_upper_band(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
