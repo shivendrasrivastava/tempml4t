@@ -4,7 +4,7 @@ import datetime as dt
 import os
 import matplotlib
 matplotlib.use('Agg')
-
+import matplotlib.pyplot
 
 from util import get_data, plot_data
 from indicators import calculate_prices, calculate_lower_band, calculate_upper_band, calculate_SMA, calculate_volatility
@@ -42,20 +42,20 @@ def testPolicy(symbol = 'JPM', sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,12,
         bb_val = checkBBVal(curr_price,curr_sma,curr_std)
         
         if(bb_val < -1):
-          if(current_holdings < 1000):
+          if(current_holdings < 1000  and curr_std < 2):
             orders_df.loc[orders_df.index[i],'Order'] = 'BUY'
             orders_df.loc[orders_df.index[i],'Shares'] = 2000
             current_holdings += 2000
             
-            matplotlib.pyplot.axvline(x=orders_df.index[i], color='r', linestyle='--')
+            matplotlib.pyplot.axvline(x=orders_df.index[i], color='g', linestyle='--')
           
         elif(bb_val > 1):
-          if(current_holdings > -1000):
+          if(current_holdings > -1000  and curr_std < 2):
             orders_df.loc[orders_df.index[i],'Order'] = 'SELL'
             orders_df.loc[orders_df.index[i],'Shares'] = 2000
             current_holdings -= 2000
             
-            matplotlib.pyplot.axvline(x=orders_df.index[i], color='g', linestyle='--')
+            matplotlib.pyplot.axvline(x=orders_df.index[i], color='r', linestyle='--')
           
       else:
         orders_df.loc[orders_df.index[i],'Order'] = 'BUY'
@@ -83,8 +83,27 @@ def benchmark(symbol = 'JPM', sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,12,3
 
     return benchmark_df
 
-if __name__ == "__main__":
+def calculate_period_returns(df, period):
+    if period == 252:
+        period_returns = (df/df.shift(1)) - 1
+        period_returns.ix[0] = 0
+        period_returns = period_returns[1:] 
+    #fill in other periods here
+    
+    return period_returns
 
+def print_stats(df):
+    print '--------- Portfolio Information -----------'
+    cum_return = df.iloc[-1]/df.iloc[0] - 1
+    daily_returns = calculate_period_returns(df,252)
+    mean_dr = daily_returns.mean()
+    std_dr = daily_returns.std()
+    print 'Cumulative Return -> ', cum_return
+    print 'Mean of Daily Returns ->', mean_dr
+    print 'Standard Deviation of Daily Returns ->', std_dr
+    print 'Final Portfolio Value ->', df[-1]
+
+def testCode():
     ## the in sample plots
     benchmark_val = compute_portvals(benchmark(),100000)
     # print benchmark_val
@@ -93,6 +112,21 @@ if __name__ == "__main__":
     manual_strategy = compute_portvals(testPolicy(),100000)
     # print manual_strategy
     first_manual_strategy = manual_strategy.iloc[0]
+    print '                        '
+    print '                        '
+    print '                        '
+
+   
+
+    print 'Benchmark - In Sample'
+    print_stats(benchmark_val)
+    print '_______________________________________'
+    print 'Manual Strategy - In Sample'
+    print_stats(manual_strategy)
+    print '_______________________________________'
+    price_calc = calculate_prices()
+    print 'Cumulative Return of JPM, Out of Sample -> ', price_calc.iloc[-1]/price_calc.iloc[0]
+    
 
     matplotlib.pyplot.plot(benchmark_val/first_benchmark, label='Benchmark', color='b')
     matplotlib.pyplot.plot(manual_strategy/first_manual_strategy, label='Manual Rule Based Trader', color='k')
@@ -102,7 +136,8 @@ if __name__ == "__main__":
     matplotlib.pyplot.ylabel('Normalized Portfolio Value')
     matplotlib.pyplot.title('Portfolio Comparison - In Sample')
     matplotlib.pyplot.legend()
-    matplotlib.pyplot.savefig('figures/manual_strategy_in_sample.pdf')
+    matplotlib.pyplot.savefig('manual_strategy_in_sample.pdf')
+   
     matplotlib.pyplot.clf()
 
 
@@ -115,6 +150,19 @@ if __name__ == "__main__":
     # print out_manual_strategy
     out_first_manual_strategy = out_manual_strategy.iloc[0]
 
+    print '                        '
+    print '                        '
+    print '                        '
+
+    print 'Benchmark - Out of Sample'
+    print_stats(out_benchmark)
+    print '_______________________________________'
+    print 'Manual Strategy - Out of Sample'
+    print_stats(out_manual_strategy)
+    print '_______________________________________'
+    price_calc = calculate_prices(['JPM'],'2010-01-01','2011-12-31')
+    print 'Cumulative Return of JPM, Out of Sample -> ', price_calc.iloc[-1]/price_calc.iloc[0] - 1
+
     matplotlib.pyplot.plot(out_benchmark/out_first_benchmark, label='Benchmark', color='b')
     matplotlib.pyplot.plot(out_manual_strategy/out_first_manual_strategy, label='Manual Rule Based Trader', color='k')
     matplotlib.pyplot.xlim([dt.datetime(2010,1,1), dt.datetime(2011,12,31)])
@@ -123,7 +171,11 @@ if __name__ == "__main__":
     matplotlib.pyplot.ylabel('Normalized Portfolio Value')
     matplotlib.pyplot.title('Portfolio Comparison - Out of Sample')
     matplotlib.pyplot.legend()
-    matplotlib.pyplot.savefig('figures/manual_strategy_out_sample.pdf')
+    matplotlib.pyplot.savefig('manual_strategy_out_sample.pdf')
     
 
+
+if __name__ == "__main__":
+    testCode()
+    
     
