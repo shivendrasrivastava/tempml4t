@@ -2,7 +2,10 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 import os
-import matplotlib.pyplot as plt
+
+import matplotlib
+matplotlib.use('Agg')
+
 from util import get_data, plot_data
 from indicators import calculate_prices
 from marketsimcode import compute_portvals
@@ -73,13 +76,13 @@ if __name__ == "__main__":
     bps_val = compute_portvals(testPolicy(), 100000, 0.0, 0.0)
     first_bps = bps_val.iloc[0]
 
-    plt.plot(benchmark_val/first_benchmark, label='Benchmark', color='b')
-    plt.plot(bps_val/first_bps, label='Best Possible Strategy', color='k')
-    plt.xlim([dt.datetime(2008,1,1),dt.datetime(2009,12,31)])
-    plt.ylim([0,7])
-    plt.xticks(rotation=10)
-    plt.xlabel('Date')
-    plt.ylabel('Normalized Portfolio Value')
-    plt.title('Benchmark vs BPS - In Sample')
-    plt.legend()
-    plt.savefig('figures/best_possible_in_sample.pdf')
+    matplotlib.pyplot.plot(benchmark_val/first_benchmark, label='Benchmark', color='b')
+    matplotlib.pyplot.plot(bps_val/first_bps, label='Best Possible Strategy', color='k')
+    matplotlib.pyplot.xlim([dt.datetime(2008,1,1),dt.datetime(2009,12,31)])
+    matplotlib.pyplot.ylim([0,7])
+    matplotlib.pyplot.xticks(rotation=10)
+    matplotlib.pyplot.xlabel('Date')
+    matplotlib.pyplot.ylabel('Normalized Portfolio Value')
+    matplotlib.pyplot.title('Benchmark vs BPS - In Sample')
+    matplotlib.pyplot.legend()
+    matplotlib.pyplot.savefig('figures/best_possible_in_sample.pdf')

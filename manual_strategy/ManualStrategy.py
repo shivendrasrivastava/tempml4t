@@ -2,7 +2,10 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 import os
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+
+
 from util import get_data, plot_data
 from indicators import calculate_prices, calculate_lower_band, calculate_upper_band, calculate_SMA, calculate_volatility
 from marketsimcode import compute_portvals
@@ -44,7 +47,7 @@ def testPolicy(symbol = 'JPM', sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,12,
             orders_df.loc[orders_df.index[i],'Shares'] = 2000
             current_holdings += 2000
             
-            plt.axvline(x=orders_df.index[i], color='r', linestyle='--')
+            matplotlib.pyplot.axvline(x=orders_df.index[i], color='r', linestyle='--')
           
         elif(bb_val > 1):
           if(current_holdings > -1000):
@@ -52,7 +55,7 @@ def testPolicy(symbol = 'JPM', sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,12,
             orders_df.loc[orders_df.index[i],'Shares'] = 2000
             current_holdings -= 2000
             
-            plt.axvline(x=orders_df.index[i], color='g', linestyle='--')
+            matplotlib.pyplot.axvline(x=orders_df.index[i], color='g', linestyle='--')
           
       else:
         orders_df.loc[orders_df.index[i],'Order'] = 'BUY'
@@ -91,16 +94,16 @@ if __name__ == "__main__":
     # print manual_strategy
     first_manual_strategy = manual_strategy.iloc[0]
 
-    plt.plot(benchmark_val/first_benchmark, label='Benchmark', color='b')
-    plt.plot(manual_strategy/first_manual_strategy, label='Manual Rule Based Trader', color='k')
-    plt.xlim([dt.datetime(2008,1,1),dt.datetime(2009,12,31)])
-    plt.xticks(rotation=10)
-    plt.xlabel('Date')
-    plt.ylabel('Normalized Portfolio Value')
-    plt.title('Portfolio Comparison - In Sample')
-    plt.legend()
-    plt.savefig('figures/manual_strategy_in_sample.pdf')
-    plt.clf()
+    matplotlib.pyplot.plot(benchmark_val/first_benchmark, label='Benchmark', color='b')
+    matplotlib.pyplot.plot(manual_strategy/first_manual_strategy, label='Manual Rule Based Trader', color='k')
+    matplotlib.pyplot.xlim([dt.datetime(2008,1,1),dt.datetime(2009,12,31)])
+    matplotlib.pyplot.xticks(rotation=10)
+    matplotlib.pyplot.xlabel('Date')
+    matplotlib.pyplot.ylabel('Normalized Portfolio Value')
+    matplotlib.pyplot.title('Portfolio Comparison - In Sample')
+    matplotlib.pyplot.legend()
+    matplotlib.pyplot.savefig('figures/manual_strategy_in_sample.pdf')
+    matplotlib.pyplot.clf()
 
 
     ## the out of sample plots, simply exit out of the in sample and out will be presented
@@ -112,15 +115,15 @@ if __name__ == "__main__":
     # print out_manual_strategy
     out_first_manual_strategy = out_manual_strategy.iloc[0]
 
-    plt.plot(out_benchmark/out_first_benchmark, label='Benchmark', color='b')
-    plt.plot(out_manual_strategy/out_first_manual_strategy, label='Manual Rule Based Trader', color='k')
-    plt.xlim([dt.datetime(2010,1,1), dt.datetime(2011,12,31)])
-    plt.xticks(rotation=10)
-    plt.xlabel('Date')
-    plt.ylabel('Normalized Portfolio Value')
-    plt.title('Portfolio Comparison - Out of Sample')
-    plt.legend()
-    plt.savefig('figures/manual_strategy_out_sample.pdf')
+    matplotlib.pyplot.plot(out_benchmark/out_first_benchmark, label='Benchmark', color='b')
+    matplotlib.pyplot.plot(out_manual_strategy/out_first_manual_strategy, label='Manual Rule Based Trader', color='k')
+    matplotlib.pyplot.xlim([dt.datetime(2010,1,1), dt.datetime(2011,12,31)])
+    matplotlib.pyplot.xticks(rotation=10)
+    matplotlib.pyplot.xlabel('Date')
+    matplotlib.pyplot.ylabel('Normalized Portfolio Value')
+    matplotlib.pyplot.title('Portfolio Comparison - Out of Sample')
+    matplotlib.pyplot.legend()
+    matplotlib.pyplot.savefig('figures/manual_strategy_out_sample.pdf')
     
 
     
