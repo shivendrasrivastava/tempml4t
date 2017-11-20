@@ -20,27 +20,16 @@ class QLearner(object):
         dyna = 0, \
         verbose = False):
 
-        
-
         self.num_states, self.num_actions,self.alpha, self.gamma = num_states, num_actions, alpha, gamma
         self.rar, self.radr, self.s, self.a, self.dyna = rar, radr, 0, 0, dyna
         self.verbose = verbose
         self.Qtable = np.zeros((self.num_states, self.num_actions))
 
-
-        
         ## setup for Dyna
-        self.Rtable = np.ones((self.num_states, self.num_actions)) * -1.0
         self.Tcount = np.ones((self.num_states, self.num_actions, self.num_states)) * .00001
-        self.Ttable = self.Tcount/self.Tcount.sum(axis=2, keepdims=True)
-        
 
-            
-        
-
-        
-
-        
+        #test professors experience way
+        self.experience = []
 
     def querysetstate(self, s):
         """
@@ -54,15 +43,11 @@ class QLearner(object):
 
         max_a_value = np.amax(self.Qtable[s, :])
         count = 0
+
         for i in self.Qtable[s, :]:
             if i == max_a_value:
                 determined_action = count
             count+=1
-
-        # using np.where had some strange indexing that i don't like
-        # potential_a = np.where(max_a_value == self.Qtable[s, :])[0]
-        # determined_action = potential_a[0]
-        # print determined_action
 
         random_chance = np.random.uniform(0.0, 1.0)
 
@@ -73,7 +58,7 @@ class QLearner(object):
             self.a = determined_action
             action = determined_action
         
-        
+
         if self.verbose: print "s =", s,"a =",action
         return action
 
@@ -96,56 +81,40 @@ class QLearner(object):
             if i == max_a_value:
                 a_prime = count
             count+=1
-          
-        ## again strange indexing, resorted to loop above
-        # potential_a = np.where(max_a_value == self.Qtable[s_prime,:])[0] 
-        # a_prime = potential_a[0] ## wtf
-        # print a_prime
 
         random_action = rand.randint(0, self.num_actions-1)
         random_chance = np.random.uniform(0.0, 1.0)
-
         
         if (self.rar > random_chance):
             action = random_action
         else:
             action = a_prime
-        
-
 
         old_value = (1 - self.alpha) * self.Qtable[previous_s,previous_a]
         new_value = self.alpha * (r + self.gamma * self.Qtable[s_prime, action])
         
 
         self.Qtable[previous_s,previous_a] = old_value + new_value
-
-
-        ## dyna portion is below
-        if dyna_count > 0:
-            self.Rtable[previous_s, previous_a] = (self.alpha * r) + (1 - self.alpha) * self.Rtable[previous_s,previous_a]
-            self.Tcount[previous_s, previous_a, s_prime] += 1
-            self.Ttable = self.Tcount/self.Tcount.sum(axis=2, keepdims=True)
-
-            for i in range(0,dyna_count):
-                dyna_action = np.random.randint(0,self.num_actions)
-                dyna_state = np.random.randint(0,self.num_states)
-
-                dyna_s_prime = np.random.multinomial(1, self.Ttable[dyna_state, dyna_action]).argmax()
-                dyna_reward = self.Rtable[dyna_state, dyna_action]
-                dyna_old_value = (1 - self.alpha) * self.Qtable[dyna_state,dyna_action]
-                dyna_new_value = self.alpha * (dyna_reward + self.gamma * np.max(self.Qtable[dyna_s_prime]))
-                # print dyna_old_value
-                # print dyna_new_value
-                # print 'hello'
-                self.Qtable[dyna_state, dyna_action] = dyna_old_value + dyna_new_value
-
-
         
+        if dyna_count > 0:
+            self.Tcount[previous_s, previous_a, s_prime] += 1
 
+            if(self.Tcount.sum() > 1000):
+                for i in range(0,dyna_count):
 
+                    dyna_tuple = np.random.randint(0, len(self.experience))
+                    dyna_action = self.experience[dyna_tuple][1]
+                    dyna_state = self.experience[dyna_tuple][0]
+                    dyna_s_prime = self.experience[dyna_tuple][2]
+                    dyna_reward = self.experience[dyna_tuple][3]
 
-
-
+                    
+                    dyna_old_value = (1 - self.alpha) * self.Qtable[dyna_state,dyna_action]
+                    dyna_new_value = self.alpha * (dyna_reward + self.gamma * np.max(self.Qtable[dyna_s_prime]))
+                    
+                    self.Qtable[dyna_state, dyna_action] = dyna_old_value + dyna_new_value
+        
+        self.experience.append((previous_s,previous_a,s_prime,r))
 
         self.s = s_prime # setting new state
         self.a = action # setting new action
@@ -157,7 +126,7 @@ class QLearner(object):
 
 if __name__=="__main__":
     print "Remember Q from Star Trek? Well, this isn't him"
-    learner = QLearner(dyna=200)
+    
     
     
     
