@@ -7,6 +7,9 @@ import random as rand
 
 class QLearner(object):
 
+    def author(self):
+        return 'hsikka3'
+
     def __init__(self, \
         num_states=100, \
         num_actions = 4, \
@@ -16,29 +19,17 @@ class QLearner(object):
         radr = 0.99, \
         dyna = 0, \
         verbose = False):
-        # np.random.seed = 1481090001
-        # rand.seed = 1481090001
+
+        self.num_states, self.num_actions,self.alpha, self.gamma = num_states, num_actions, alpha, gamma
+        self.rar, self.radr, self.s, self.a, self.dyna = rar, radr, 0, 0, dyna
         self.verbose = verbose
-        self.num_actions = num_actions
-        self.s = 0
-        self.a = 0
-        self.num_states = num_states
-        self.alpha = alpha
-        self.gamma =gamma
-        self.rar = rar
-        self.radr = radr
-        self.dyna = dyna
-        self.q = np.array([[0]*self.num_actions]*self.num_states , dtype=float)
-        self.T , self.visited_states , self.T_c , self.R = None,None,None,None
-        if dyna >0:
-            self.T = np.array([[[0]*self.num_states]*self.num_actions]*self.num_states , dtype=float)
-            self.visited_states = set([])
-            self.T_c = np.array([[[0]*self.num_states]*self.num_actions]*self.num_states , dtype=float)
-            self.R = np.array([[0]*self.num_actions]*self.num_states , dtype=float)
+        self.Qtable = np.zeros((self.num_states, self.num_actions))
 
-    def author(self):
-        return 'snagamalla3' # replace tb34 with your Georgia Tech username.
+        ## setup for Dyna
+        self.Tcount = np.ones((self.num_states, self.num_actions, self.num_states)) * .00001
 
+        #test professors experience way
+        self.experience = []
 
     def querysetstate(self, s):
         """
@@ -46,29 +37,32 @@ class QLearner(object):
         @param s: The new state
         @returns: The selected action
         """
-        action = np.argmax(self.q[s])
+
+        possible_a = self.num_actions - 1
+        self.s = s
+
+        random_action = rand.randint(0, possible_a)
+
+        max_a_value = np.amax(self.Qtable[s, :])
+        count = 0
+
+        for i in self.Qtable[s, :]:
+            if i == max_a_value:
+                determined_action = count
+            count+=1
+
+        random_chance = np.random.uniform(0.0, 1.0)
+
+        if (self.rar > random_chance):
+            self.a = random_action
+            action = random_action
+        else:
+            self.a = determined_action
+            action = determined_action
+        
+
         if self.verbose: print "s =", s,"a =",action
-        self.s  = s
-        self.a =action
-        if self.dyna >0:
-            self.visited_states.add((s,action))
         return action
-
-
-    def dynaLearn(self):
-        sampleStatesInd = np.random.choice(range(len(self.visited_states)),self.dyna)
-        visited_states_list = list(self.visited_states)
-        dynaCount = self.dyna
-        samplingCount = max(1,int(0.5*self.num_states))
-        for i in range(dynaCount):
-            s,a = visited_states_list[sampleStatesInd[i]]
-            T_s_a = self.T[s][a]
-            s_prime =np.argmax(np.random.multinomial(samplingCount,T_s_a.tolist(), size =1) )
-            r = self.R[s][a]
-            self.q[s][a] = (1 - self.alpha)*self.q[s][a] + self.alpha*(r + self.gamma*self.q[s_prime][np.argmax(self.q[s_prime])])
-
-
-
 
     def query(self,s_prime,r):
         """
@@ -77,27 +71,64 @@ class QLearner(object):
         @param r: The ne state
         @returns: The selected action
         """
-        self.q[self.s][self.a] = (1 - self.alpha)*self.q[self.s][self.a] + self.alpha*(r + self.gamma*self.q[s_prime][np.argmax(self.q[s_prime])])
 
-        if self.dyna > 0:
-            self.R[self.s][self.a] =  (1 - self.alpha)*self.R[self.s][self.a] + self.alpha*r
-            self.T_c[self.s][self.a][s_prime] += 1
-            self.T[self.s][self.a] = self.T_c[self.s][self.a]/np.sum(self.T_c[self.s][self.a])
-            self.visited_states.add((self.s,self.a))
+        dyna_count = self.dyna
+        previous_s = self.s
+        previous_a = self.a
+        possible_a = self.num_actions - 1
 
-        action = None
-        if rand.uniform(0,1) > self.rar:
-            action = np.argmax(self.q[s_prime])
+        max_a_value = np.amax(self.Qtable[s_prime, :])
+
+        count = 0
+        for i in self.Qtable[s_prime, :]:
+            if i == max_a_value:
+                a_prime = count
+            count+=1
+
+        random_action = rand.randint(0, possible_a)
+        random_chance = np.random.uniform(0.0, 1.0)
+        
+        if (self.rar > random_chance):
+            action = random_action
         else:
-            action = rand.randint(0, self.num_actions-1)
+            action = a_prime
+        
 
-        self.s =s_prime
-        self.a = action
-        self.rar =self.radr*self.rar
-        if self.dyna >0:
-            self.dynaLearn()
+        self.Qtable[previous_s,previous_a] = (1 - self.alpha) * self.Qtable[previous_s,previous_a] + self.alpha * (r + self.gamma * self.Qtable[s_prime, action])
+        
+        if dyna_count > 0:
+            self.Tcount[previous_s, previous_a, s_prime] += 1
+
+            if(self.Tcount.sum() > 1000):
+                for i in range(0,dyna_count):
+
+                    dyna_tuple = np.random.randint(0, len(self.experience))
+                    dyna_state = self.experience[dyna_tuple][0]
+                    dyna_action = self.experience[dyna_tuple][1]
+                    dyna_s_prime = self.experience[dyna_tuple][2]
+                    dyna_reward = self.experience[dyna_tuple][3]
+
+                    
+                    # dyna_old_value = (1 - self.alpha) * self.Qtable[dyna_state,dyna_action]
+                    # dyna_new_value = self.alpha * (dyna_reward + self.gamma * np.max(self.Qtable[dyna_s_prime]))
+                    
+                    self.Qtable[dyna_state, dyna_action] = (1 - self.alpha) * self.Qtable[dyna_state,dyna_action] + self.alpha * (dyna_reward + self.gamma * np.max(self.Qtable[dyna_s_prime]))
+        
+        self.experience.append((previous_s,previous_a,s_prime,r))
+
+        self.s = s_prime # setting new state
+        self.a = action # setting new action
+
+        self.rar = self.rar * self.radr # decaying rar
+
         if self.verbose: print "s =", s_prime,"a =",action,"r =",r
         return action
 
 if __name__=="__main__":
     print "Remember Q from Star Trek? Well, this isn't him"
+    
+    
+    
+    
+    
+    

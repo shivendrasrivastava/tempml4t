@@ -50,7 +50,7 @@ def testPolicy(symbol = 'JPM', sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,12,
             orders_df.loc[orders_df.index[i],'Shares'] = 2000
             current_holdings += 2000
             
-            matplotlib.pyplot.axvline(x=orders_df.index[i], color='g', linestyle='--')
+            # matplotlib.pyplot.axvline(x=orders_df.index[i], color='g', linestyle='--')
           
         elif(bb_val > 1):
           if(current_holdings > -1000  and curr_std < 2):
@@ -58,7 +58,7 @@ def testPolicy(symbol = 'JPM', sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,12,
             orders_df.loc[orders_df.index[i],'Shares'] = -2000
             current_holdings -= 2000
             
-            matplotlib.pyplot.axvline(x=orders_df.index[i], color='r', linestyle='--')
+            # matplotlib.pyplot.axvline(x=orders_df.index[i], color='r', linestyle='--')
           
       else:
         
@@ -78,14 +78,13 @@ def benchmark(symbol = 'JPM', sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,12,3
     prices = calculate_prices([symbol],sd,ed)
     
     benchmark_df = prices.copy().drop([symbol],axis=1)
-    benchmark_df = benchmark_df.assign(Symbol = 'JPM')
-    benchmark_df = benchmark_df.assign(Order = 'BUY')
     benchmark_df = benchmark_df.assign(Shares = 0)
-    benchmark_df.iloc[0,2] = 1000
+    benchmark_df.iloc[0,0] = 1000
 
     # orders = pd.read_csv('./benchmark.csv', index_col='Date', parse_dates=True)
     # print orders
 
+    benchmark_df.columns = [symbol]
     return benchmark_df
 
 def calculate_period_returns(df, period):
@@ -110,11 +109,11 @@ def print_stats(df):
 
 def testCode():
 
-    ## old manual strat code
-    # ## the in sample plots
-    # benchmark_val = compute_portvals(benchmark(),100000)
-    # # print benchmark_val
-    # # first_benchmark = benchmark_val.iloc[0]
+    # old manual strat code
+    ## the in sample plots
+    benchmark_val = compute_portvals(benchmark(),100000)
+    # print benchmark_val
+    # first_benchmark = benchmark_val.iloc[0]
 
     manual_strategy = compute_portvals(testPolicy(),100000)
     # print manual_strategy
@@ -125,8 +124,8 @@ def testCode():
 
    
 
-    # print 'Benchmark - In Sample'
-    # print_stats(benchmark_val)
+    print 'Benchmark - In Sample'
+    print_stats(benchmark_val)
     print '_______________________________________'
     print 'Manual Strategy - In Sample'
     print_stats(manual_strategy)
@@ -135,23 +134,23 @@ def testCode():
     print 'Cumulative Return of JPM, Out of Sample -> ', price_calc.iloc[-1]/price_calc.iloc[0]
     
 
-    # matplotlib.pyplot.plot(benchmark_val/first_benchmark, label='Benchmark', color='b')
-    # matplotlib.pyplot.plot(manual_strategy/first_manual_strategy, label='Manual Rule Based Trader', color='k')
-    # matplotlib.pyplot.xlim([dt.datetime(2008,1,1),dt.datetime(2009,12,31)])
-    # matplotlib.pyplot.xticks(rotation=10)
-    # matplotlib.pyplot.xlabel('Date')
-    # matplotlib.pyplot.ylabel('Normalized Portfolio Value')
-    # matplotlib.pyplot.title('Portfolio Comparison - In Sample')
-    # matplotlib.pyplot.legend()
-    # matplotlib.pyplot.savefig('manual_strategy_in_sample.pdf')
+    matplotlib.pyplot.plot(benchmark_val/first_benchmark, label='Benchmark', color='b')
+    matplotlib.pyplot.plot(manual_strategy/first_manual_strategy, label='Manual Rule Based Trader', color='k')
+    matplotlib.pyplot.xlim([dt.datetime(2008,1,1),dt.datetime(2009,12,31)])
+    matplotlib.pyplot.xticks(rotation=10)
+    matplotlib.pyplot.xlabel('Date')
+    matplotlib.pyplot.ylabel('Normalized Portfolio Value')
+    matplotlib.pyplot.title('Portfolio Comparison - In Sample')
+    matplotlib.pyplot.legend()
+    matplotlib.pyplot.savefig('manual_strategy_in_sample.pdf')
    
-    # matplotlib.pyplot.clf()
+    matplotlib.pyplot.clf()
 
 
-    ## the out of sample plots, simply exit out of the in sample and out will be presented
-    # out_benchmark = compute_portvals(benchmark('JPM', dt.datetime(2010,1,1), dt.datetime(2011,12,31)),100000)
-    # # print out_benchmark
-    # out_first_benchmark = out_benchmark.iloc[0]
+    # the out of sample plots, simply exit out of the in sample and out will be presented
+    out_benchmark = compute_portvals(benchmark('JPM', dt.datetime(2010,1,1), dt.datetime(2011,12,31)),100000)
+    # print out_benchmark
+    out_first_benchmark = out_benchmark.iloc[0]
 
     out_manual_strategy = compute_portvals(testPolicy('JPM', dt.datetime(2010,1,1), dt.datetime(2011,12,31)),100000)
     # print out_manual_strategy
@@ -161,8 +160,8 @@ def testCode():
     print '                        '
     print '                        '
 
-    # print 'Benchmark - Out of Sample'
-    # print_stats(out_benchmark)
+    print 'Benchmark - Out of Sample'
+    print_stats(out_benchmark)
     print '_______________________________________'
     print 'Manual Strategy - Out of Sample'
     print_stats(out_manual_strategy)
@@ -170,15 +169,15 @@ def testCode():
     price_calc = calculate_prices(['JPM'],'2010-01-01','2011-12-31')
     print 'Cumulative Return of JPM, Out of Sample -> ', price_calc.iloc[-1]/price_calc.iloc[0] - 1
 
-    # matplotlib.pyplot.plot(out_benchmark/out_first_benchmark, label='Benchmark', color='b')
-    # matplotlib.pyplot.plot(out_manual_strategy/out_first_manual_strategy, label='Manual Rule Based Trader', color='k')
-    # matplotlib.pyplot.xlim([dt.datetime(2010,1,1), dt.datetime(2011,12,31)])
-    # matplotlib.pyplot.xticks(rotation=10)
-    # matplotlib.pyplot.xlabel('Date')
-    # matplotlib.pyplot.ylabel('Normalized Portfolio Value')
-    # matplotlib.pyplot.title('Portfolio Comparison - Out of Sample')
-    # matplotlib.pyplot.legend()
-    # matplotlib.pyplot.savefig('manual_strategy_out_sample.pdf')
+    matplotlib.pyplot.plot(out_benchmark/out_first_benchmark, label='Benchmark', color='b')
+    matplotlib.pyplot.plot(out_manual_strategy/out_first_manual_strategy, label='Manual Rule Based Trader', color='k')
+    matplotlib.pyplot.xlim([dt.datetime(2010,1,1), dt.datetime(2011,12,31)])
+    matplotlib.pyplot.xticks(rotation=10)
+    matplotlib.pyplot.xlabel('Date')
+    matplotlib.pyplot.ylabel('Normalized Portfolio Value')
+    matplotlib.pyplot.title('Portfolio Comparison - Out of Sample')
+    matplotlib.pyplot.legend()
+    matplotlib.pyplot.savefig('manual_strategy_out_sample.pdf')
     
 
 
