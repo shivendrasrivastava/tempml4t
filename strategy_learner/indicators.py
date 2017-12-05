@@ -1,159 +1,74 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+from util import get_data
 import datetime as dt
-import os
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot
 
-from util import get_data, plot_data
+class Indicators:
 
-def author():
-    return 'hsikka3'  
+    def __init__(self,price_data , time_period = 5):
+        self.price_data = price_data
+        self.time_period = time_period
+        self.price_data.fillna(method="ffill",inplace=True)
+        self.price_data.fillna(method="bfill",inplace=True)
 
-def calculate_prices(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
-  dates = pd.date_range(sd,ed)
-  df = get_data(symbols,dates,True,'Adj Close')
+    def boilinger_bands_indicator(self):
+        price_data = self.price_data.copy()
+        price_data["SMA"] = pd.rolling_mean(self.price_data,self.time_period,0)
+        price_data["std"] = pd.rolling_std(self.price_data,self.time_period , min_periods =1)
+        price_data.fillna(0,inplace=True)
+        price_data["bb"] = price_data.iloc[:,0]
+        price_data["bb"]= (price_data.iloc[:,0] - price_data.iloc[:,1])/(2*price_data.iloc[:,2])
+        boilinger_band_ind = pd.DataFrame(price_data["bb"] , index=price_data.index)
+        return boilinger_band_ind
 
-  price = df.iloc[0:,1:]
-  price = price.fillna(method='ffill').fillna(method='bfill')
-  return price
+    def simple_moving_averages_indicator(self):
+        price_data = self.price_data.copy()
+        price_data["SMA"] = pd.rolling_mean(self.price_data,self.time_period,0)
+        smaInd = (price_data.iloc[:,0]/price_data.iloc[:,1])
+        price_data = price_data/price_data.iloc[0]
+        price_data["smaInd"] = smaInd
+        return  pd.DataFrame(price_data["smaInd"] , index=price_data.index)
 
-def calculate_SMA(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
-  dates = pd.date_range(sd,ed)
-  df = get_data(symbols,dates,True,'Adj Close')
 
-  price = df.iloc[0:,1:]
-  price = price.fillna(method='ffill').fillna(method='bfill')
-  # JPMdf = JPMdf/JPMdf.iloc[0]
-  rollingDF = pd.rolling_mean(price,window=20)
-  return rollingDF
+    def moving_average_convergence_divergence(self):
+        price_data = self.price_data.copy()
+        #print "Init = " , price_data.shape
 
-# def calculate_EMA(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
-#   dates = pd.date_range(sd,ed)
-#   df = get_data(symbols,dates,True,'Adj Close')
+        price_data["ema26"] = pd.ewma(self.price_data, span=26)
+        # print "EMA26 = " , price_data.shape
+        price_data["ema12"] = pd.ewma(self.price_data, span=12)
+        # print "EMA12 = " , price_data.shape
+        macd = pd.DataFrame(price_data["ema12"]  - price_data["ema26"] , columns=["MACD"], index=price_data.index)
 
-#   price = df.iloc[0:,1:]
-#   price = price.fillna(method='ffill').fillna(method='bfill')
-#   # JPMdf = JPMdf/JPMdf.ioc[0]
-#   rollingDF = pd.rolling_mean(price,window=20)
-#   return rollingDF
+        # print "MACD = " , macd.shape
 
-def calculate_upper_band(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
-  dates = pd.date_range(sd,ed)
-  df = get_data(symbols,dates,True,'Adj Close')
+        macd["Signal"] = pd.ewma(macd,span=9)
+        macd["Indicator"] = macd["MACD"] - macd["Signal"]
 
-  price = df.iloc[0:,1:]
-  price = price.fillna(method='ffill').fillna(method='bfill')
+        # print "MACD Final = " , macd.shape
 
-  double_std = 2 * pd.rolling_std(price,window=20)
+        macd_indicator = pd.DataFrame(macd["Indicator"] , index=price_data.index)
+        # print "MACD INd = " , macd_indicator.shape
 
-  upper_band = calculate_SMA(symbols,sd,ed) + double_std 
-
-  return upper_band
-
-def calculate_lower_band(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
-  dates = pd.date_range(sd,ed)
-  df = get_data(symbols,dates,True,'Adj Close')
-
-  price = df.iloc[0:,1:]
-  price = price.fillna(method='ffill').fillna(method='bfill')
-
-  double_std = 2 * pd.rolling_std(price,window=20)
-
-  lower_band = calculate_SMA(symbols,sd,ed) - double_std
-
-  return lower_band
-
-def calculate_volatility(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
-  dates = pd.date_range(sd,ed)
-  df = get_data(symbols,dates,True,'Adj Close')
-  price = df.iloc[0:,1:]
-
-  volatility_df = pd.rolling_std(price,window=20)
-
-  return volatility_df
-
-# def calculate_momentum(symbols=['JPM'], sd='2008-01-01' , ed='2009-12-31'):
-#   dates = pd.date_range(sd,ed)
-#   df = get_data(symbols,dates,True,'Adj Close')
-#   price = df.iloc[0:,1:]
-
-def checkBBVal(price, sma, std):
-    diff = (price-sma)
-    bbval = diff/(2*std)
-    return bbval
+        return macd_indicator
 
 
 
+# sd = dt.datetime(2008,1,1)
+# ed = dt.datetime(2009,12,31)
+# dates = pd.date_range(start=sd, end=ed)
+# syms = ['JPM']
+# price_data = get_data(syms,dates,False)
+# ind = Indicators(price_data,time_period=10)
+# sma = ind.simple_moving_averages_indicator()
+# bbi = ind.boilinger_bands_indicator()
+# macd = ind.moving_average_convergence_divergence()
+#
+# print sma.head(5) , np.max(sma) , np.min(sma)
+# print bbi.head(5) , np.max(bbi) , np.min(bbi)
+# print macd.head(5) , np.max(macd) , np.min(macd)
+#
+# print "Done Indicators"
+#save_plot_data(bb,"bb" ,"Data" , "BB")
 
-if __name__ == "__main__":
-    ## first indicator is price, sma, and price/sma
-    price = calculate_prices()
-    price = price/price.iloc[0]
 
-    sma = calculate_SMA()
-    sma = sma/sma.iloc[20]
-    
-
-    price_sma = price/sma
-    matplotlib.pyplot.plot(price, label = 'JPM')
-    matplotlib.pyplot.plot(sma, label = 'SMA')
-    matplotlib.pyplot.plot(price_sma, label = 'Price/SMA')
-    matplotlib.pyplot.xlim([dt.datetime(2008,1,1), dt.datetime(2009,12,31)])
-    matplotlib.pyplot.xticks(rotation=10)
-    matplotlib.pyplot.xlabel('Date')
-    matplotlib.pyplot.ylabel('Value')
-    matplotlib.pyplot.title('Normalized Price, SMA and Price/SMA')
-    matplotlib.pyplot.legend()
-    matplotlib.pyplot.savefig('price_sma.pdf')
-
-    matplotlib.pyplot.clf()
-
-    ## second indicator is bbs
-    upper_bb = calculate_upper_band()
-    lower_bb = calculate_lower_band()
-    price = calculate_prices()
-    sma = calculate_SMA()
-
-    matplotlib.pyplot.plot(price, label = 'JPM')
-    matplotlib.pyplot.plot(sma, label = 'SMA')
-    matplotlib.pyplot.plot(upper_bb, label = 'Upper Band')
-    matplotlib.pyplot.plot(lower_bb, label = 'Lower Band')
-    matplotlib.pyplot.xlim([dt.datetime(2008,1,1), dt.datetime(2009,12,31)])
-    matplotlib.pyplot.xticks(rotation=10)
-    matplotlib.pyplot.xlabel('Date')
-    matplotlib.pyplot.ylabel('Price')
-    matplotlib.pyplot.title('Bollinger Bands')
-    matplotlib.pyplot.legend()
-    matplotlib.pyplot.savefig('bollinger_bands.pdf')
-    matplotlib.pyplot.clf()
-
-    # to assist bbs, i'll plot bollinger value
-
-    bb_val = checkBBVal(price,sma,calculate_volatility())
-    matplotlib.pyplot.plot(bb_val, label = 'Bollinger Band Value')
-    matplotlib.pyplot.xlim([dt.datetime(2008,1,1), dt.datetime(2009,12,31)])
-    matplotlib.pyplot.xticks(rotation=10)
-    matplotlib.pyplot.xlabel('Date')
-    matplotlib.pyplot.ylabel('Value')
-    matplotlib.pyplot.title('Bollinger Band Value')
-    matplotlib.pyplot.legend()
-    matplotlib.pyplot.grid(color='0.25', linestyle='--', linewidth=1)
-    matplotlib.pyplot.savefig('bollinger_value.pdf')
-    matplotlib.pyplot.clf()
-
-    ## now, the third indicator, one that is considered unique, used will be Volatility
-    volatility = calculate_volatility()
-    price = calculate_prices()
-    price = price/price.iloc[0]
-    matplotlib.pyplot.plot(price, label = 'JPM')
-    matplotlib.pyplot.plot(volatility, label = 'Volatility')
-    matplotlib.pyplot.xlim([dt.datetime(2008,1,1), dt.datetime(2009,12,31)])
-    matplotlib.pyplot.xticks(rotation=10)
-    matplotlib.pyplot.xlabel('Date')
-    matplotlib.pyplot.ylabel('Value')
-    matplotlib.pyplot.title('Volatility vs Normalized Price')
-    matplotlib.pyplot.legend()
-    matplotlib.pyplot.savefig('volatility.pdf')
-    matplotlib.pyplot.clf()
